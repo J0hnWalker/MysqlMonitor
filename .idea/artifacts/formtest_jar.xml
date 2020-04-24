@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="formtest:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/formtest_jar</output-path>
+    <root id="archive" name="formtest.jar">
+      <element id="module-output" name="formtest" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../jars/mysql-connector-java-8.0.15.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
