@@ -2,6 +2,8 @@ package com.wk;
 
 import javax.swing.*;
 import javax.swing.JScrollPane;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -9,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,6 +26,9 @@ public class test {
         return t1;
     }
     public static int cacheNum = 50;
+    public static Vector vdata = new Vector();
+    public static Vector vtitle = new Vector();
+    public static DefaultTableModel defaultModel = null;
 
     public test() {
         button1.addActionListener(new ActionListener() {
@@ -42,9 +48,17 @@ public class test {
                         test.m.execSql(test.conn, "set global general_log=on;");
                         String[] logStatus = test.m.execSql(test.conn, "show variables like 'general_log';").trim().split("\t");
                         System.out.println(logStatus[1]);
-                        while (logStatus[1].equals("ON")) {
-                            //System.out.println("ISINTERRUPTED: "+test.t1.isInterrupted());
-                            test.m.logMonitor(test.m.logSwitch(test.conn, bottomlabel), TextArea1, test.cacheNum);
+                        //while (logStatus[1].equals("ON")) {
+                        while(!Thread.currentThread().isInterrupted()){
+                            System.out.println("ISINTERRUPTED: "+test.t1.isInterrupted());
+                            try {
+                                test.m.logMonitor(test.m.logSwitch(test.conn, bottomlabel), TextArea1, test.cacheNum, vdata, vtitle, table1, defaultModel);
+                                Thread.sleep(1000);
+                            }
+                            catch (InterruptedException e){
+                                System.out.println("ISINTERRUPTED: "+test.t1.isInterrupted());
+                                Thread.currentThread().interrupt();
+                            }
                         }
                     }
                 };
@@ -56,11 +70,12 @@ public class test {
             public void actionPerformed(ActionEvent e) {
                 //JOptionPane.showMessageDialog(null, "Hello Walker.");
                 Connection cn = getConn();
-                //Thread t2 = getT1();
+                Thread t2 = getT1();
                 if (cn != null) {
                     try {
                         test.m.execSql(test.conn, "set global general_log=off;");
                         cn.close();
+                        t2.interrupt();
                         JOptionPane.showMessageDialog(null, "关闭连接.");
                     } catch (SQLException ex) {
                         ex.printStackTrace();
@@ -68,7 +83,14 @@ public class test {
                 }
             }
         });
-
+        vtitle.add("id");
+        vtitle.add("requestText");
+        vtitle.add("requestType");
+        vtitle.add("time");
+        defaultModel = new DefaultTableModel(vdata, vtitle);
+        table1.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        table1.setModel(defaultModel);
+        JScrollPane2.setViewportView(table1);
         comboBox1.addItem(50);
         comboBox1.addItem(100);
         comboBox1.addItem(200);
@@ -84,8 +106,16 @@ public class test {
     }
 
     public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(
+                    "com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+        } catch (UnsupportedLookAndFeelException e) {
+        } catch (ClassNotFoundException e) {
+        } catch (InstantiationException e) {
+        } catch (IllegalAccessException e) {
+        }
         JFrame frame = new JFrame("test");
-        frame.setSize(50, 50);
+        //frame.setSize(50, 50);
         frame.setContentPane(new test().panelMain);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
@@ -109,7 +139,8 @@ public class test {
     private JTextField hostField;
     private JLabel dblabel;
     private JTextField dbField;
+    private JTable table1;
+    private JScrollPane JScrollPane2;
     private JButton 断开连接Button;
     private JOptionPane JP;
-
 }

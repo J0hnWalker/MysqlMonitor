@@ -1,6 +1,7 @@
 package com.wk;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.*;
 import java.sql.Connection;
@@ -11,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Vector;
 import java.util.regex.*;
 
 public class monitor {
@@ -66,7 +68,7 @@ public class monitor {
 
     public static String logSwitch(Connection conn, JLabel label){
         Date d = new Date();
-        SimpleDateFormat time = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]");
+        SimpleDateFormat time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         SimpleDateFormat time1 = new SimpleDateFormat("yyyy-MM-dd");
         String path = execSql(conn, "select @@datadir;").trim().replace("\\", "/") + String.format("%s.txt", time1.format(d));
         //Connection conn = connectMysql("root", "toor", "sec_sql", "127.0.0.1", 8889);
@@ -116,11 +118,11 @@ public class monitor {
         return logfile[1];
     }
 
-    public static void logMonitor(String logfile, JTextArea TextArea1, int cacheNum){
+    public static void logMonitor(String logfile, JTextArea TextArea1, int cacheNum, Vector vdata, Vector vtitle, JTable table, DefaultTableModel defaultModel){
         Process process = null;
         String[] command = null;
         Date d = new Date();
-        SimpleDateFormat time = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]");
+        SimpleDateFormat time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
             String OS = System.getProperty("os.name").toLowerCase();
 
@@ -132,39 +134,59 @@ public class monitor {
             }
             process = Runtime.getRuntime().exec(command);
             final InputStream in = process.getInputStream();
-            Thread t = new Thread() {
-                public void run() {
-                    BufferedReader read = new BufferedReader(new InputStreamReader(in));
-                    Pattern r = Pattern.compile("Query\\s*(.*)");
-                    try {
-                        String line = null;
-                        while ((line = read.readLine()) != null) {
-                            try{
-                                Matcher m = r.matcher(line);
-                                if(m.find()){
-                                    System.out.println(time.format(d) + " : " + m.group(0));
-                                    TextArea1.append(time.format(d) + " : " + m.group(0) + "\n");
-                                    if(TextArea1.getLineCount()>cacheNum){
-                                        TextArea1.setText("");
-                                    }
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
+//            Thread t = new Thread() {
+//                public void run() {
+//
+//                }
+//            };
+//            t.start();
+            BufferedReader read = null;
+            try {
+                read = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            Pattern r = Pattern.compile("Query\\s*(.*)");
+            try {
+                String line = null;
+                int count = 1;
+                while ((line = read.readLine()) != null) {
+                    try{
+                        Matcher m = r.matcher(line);
+                        if(m.find()){
+                            System.out.println(time.format(d) + " : " + m.group(0));
+                            TextArea1.append(time.format(d) + " : " + m.group(0) + "\n");
+
+                            Vector vRow = new Vector();
+                            vRow.add(count);
+                            vRow.add(m.group(1));
+                            vRow.add("Query");
+                            vRow.add(time.format(d));
+                            vdata.add(vRow.clone());
+                            defaultModel = new DefaultTableModel(vdata, vtitle);
+                            table.setModel(defaultModel);
+                            if(TextArea1.getLineCount()>cacheNum){
+                                TextArea1.setText("");
+                                defaultModel.setRowCount(0);
+                                table.setModel(defaultModel);
+                                count = 1;
                             }
+                            count += 1;
                         }
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    finally{
-                        try {
-                            in.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
                 }
-            };
-            t.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            finally{
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             process.waitFor();
         }
         catch (IOException | InterruptedException e){
@@ -173,25 +195,25 @@ public class monitor {
     }
 
     public static void main(String[] args){
-        Connection conn = null;
-        String logfile = null;
-        //conn = connectMysql("root", "toor", "sys", "127.0.0.1", 3306);
-        //conn = connectMysql("root", "toor", "test", "127.0.0.1", 3306);
-        //logfile = logSwitch(conn);
-        try {
-            //logMonitor(logfile, textArea1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try{
-            execSql(conn, "set global general_log=off;");
-            if (conn != null) {
-                conn.close();
-            }
-        }
-        catch (SQLException ex){
-            ex.printStackTrace();
-        }
+//        Connection conn = null;
+//        String logfile = null;
+//        //conn = connectMysql("root", "toor", "sys", "127.0.0.1", 3306);
+//        //conn = connectMysql("root", "toor", "test", "127.0.0.1", 3306);
+//        //logfile = logSwitch(conn);
+//        try {
+//            //logMonitor(logfile, textArea1);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        try{
+//            execSql(conn, "set global general_log=off;");
+//            if (conn != null) {
+//                conn.close();
+//            }
+//        }
+//        catch (SQLException ex){
+//            ex.printStackTrace();
+//        }
 
 
     }
