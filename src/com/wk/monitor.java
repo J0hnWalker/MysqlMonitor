@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Vector;
 import java.util.regex.*;
+import java.util.stream.StreamSupport;
 
 public class monitor {
 
@@ -118,7 +119,7 @@ public class monitor {
         return logfile[1];
     }
 
-    public static void logMonitor(String logfile, JTextArea TextArea1, int cacheNum, Vector vdata, Vector vtitle, JTable table, DefaultTableModel defaultModel){
+    public static void logMonitor(String logfile, int cacheNum, Vector vdata, Vector vtitle, JTable table, DefaultTableModel defaultModel){
         Process process = null;
         String[] command = null;
         Date d = new Date();
@@ -155,8 +156,6 @@ public class monitor {
                         Matcher m = r.matcher(line);
                         if(m.find()){
                             System.out.println(time.format(d) + " : " + m.group(0));
-                            TextArea1.append(time.format(d) + " : " + m.group(0) + "\n");
-
                             Vector vRow = new Vector();
                             vRow.add(count);
                             vRow.add(m.group(1));
@@ -165,8 +164,7 @@ public class monitor {
                             vdata.add(vRow.clone());
                             defaultModel = new DefaultTableModel(vdata, vtitle);
                             table.setModel(defaultModel);
-                            if(TextArea1.getLineCount()>cacheNum){
-                                TextArea1.setText("");
+                            if(table.getRowCount()>cacheNum){
                                 defaultModel.setRowCount(0);
                                 table.setModel(defaultModel);
                                 count = 1;

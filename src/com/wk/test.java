@@ -6,14 +6,10 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class test {
     public static monitor m;
@@ -52,7 +48,7 @@ public class test {
                         while(!Thread.currentThread().isInterrupted()){
                             System.out.println("ISINTERRUPTED: "+test.t1.isInterrupted());
                             try {
-                                test.m.logMonitor(test.m.logSwitch(test.conn, bottomlabel), TextArea1, test.cacheNum, vdata, vtitle, table1, defaultModel);
+                                test.m.logMonitor(test.m.logSwitch(test.conn, bottomlabel), test.cacheNum, vdata, vtitle, table1, defaultModel);
                                 Thread.sleep(1000);
                             }
                             catch (InterruptedException e){
@@ -90,12 +86,11 @@ public class test {
         defaultModel = new DefaultTableModel(vdata, vtitle);
         table1.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         table1.setModel(defaultModel);
+        JScrollPane2.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         JScrollPane2.setViewportView(table1);
         comboBox1.addItem(50);
         comboBox1.addItem(100);
         comboBox1.addItem(200);
-        JScrollPane1.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        JScrollPane1.setViewportView(TextArea1);
         comboBox1.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -131,8 +126,6 @@ public class test {
     private JButton button2;
     private JPasswordField passwordField;
     private JPanel panel2;
-    private JTextArea TextArea1;
-    private JScrollPane JScrollPane1;
     private JComboBox comboBox1;
     private JLabel bottomlabel;
     private JLabel hostLabel;
