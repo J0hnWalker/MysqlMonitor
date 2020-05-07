@@ -25,13 +25,13 @@ public class monitor {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%d/%s", host, port, dbname), user, pass);
-            System.out.println(time.format(d) + ": 数据库连接成功");
+            //System.out.println(time.format(d) + ": 数据库连接成功");
             return conn;
 
         } catch (ClassNotFoundException | SQLException e) {
             //e.printStackTrace();
             //System.out.println(time.format(d) + ": 数据库连接失败..." + e.getMessage());
-            JOptionPane.showMessageDialog(null, e.getMessage());
+            JOptionPane.showMessageDialog(null, e.getMessage(), new String("连接失败"), JOptionPane.ERROR_MESSAGE);
             return null;
         }
     }
@@ -75,8 +75,8 @@ public class monitor {
         //Connection conn = connectMysql("root", "toor", "sec_sql", "127.0.0.1", 8889);
         String[] logfile = null;
         if(conn != null) {
-            String ver = execSql(conn, "select VERSION();");
-            System.out.print(time.format(d) + ": 数据库版本: " + ver);
+            //String ver = execSql(conn, "select VERSION();");
+            //System.out.print(time.format(d) + ": 数据库版本: " + ver);
             String[] logStatus = execSql(conn, "show variables like 'general_log';").trim().split("\t");
 
 
@@ -89,7 +89,7 @@ public class monitor {
                     //开启日志模式后设置log文件存放路径
                     //System.out.println(time.format(d) + ": 日志模式已开启");
                     label.setText(time.format(d) + ": 日志模式已开启");
-                    System.out.println(path);
+                    //System.out.println(path);
                     execSql(conn, "set global general_log_file='" + path + "';");
                     logfile = execSql(conn, "show variables like 'general_log_file';").trim().split("\t");
                     //System.out.println(time.format(d) + ": 日志文件: " + logfile[1]);
@@ -102,8 +102,8 @@ public class monitor {
                     }
                 }
             } else {
-                System.out.println(time.format(d) + ": 日志模式已开启");
-                System.out.println(time.format(d) + ": 日志监听中...");
+                //System.out.println(time.format(d) + ": 日志模式已开启");
+                //System.out.println(time.format(d) + ": 日志监听中...");
                 label.setText(time.format(d) + ": 日志模式已开启");
                 label.setText(time.format(d) + ": 日志监听中...");
                 execSql(conn, "set global general_log_file='" + path + "';");
@@ -119,14 +119,13 @@ public class monitor {
         return logfile[1];
     }
 
-    public static void logMonitor(String logfile, int cacheNum, Vector vdata, Vector vtitle, JTable table, DefaultTableModel defaultModel){
+    public static Process logMonitor(String logfile, int cacheNum, JTable table, DefaultTableModel defaultModel){
         Process process = null;
         String[] command = null;
         Date d = new Date();
         SimpleDateFormat time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
             String OS = System.getProperty("os.name").toLowerCase();
-
             if (OS.contains("win")) {
                 command = new String[]{"cmd.exe", "/c", "tail.exe -f \"" + logfile + "\""};
             }
@@ -155,19 +154,16 @@ public class monitor {
                     try{
                         Matcher m = r.matcher(line);
                         if(m.find()){
-                            System.out.println(time.format(d) + " : " + m.group(0));
+                            //System.out.println(time.format(d) + " : " + m.group(0));
                             Vector vRow = new Vector();
                             vRow.add(count);
                             vRow.add(m.group(1));
                             vRow.add("Query");
                             vRow.add(time.format(d));
-                            vdata.add(vRow.clone());
-                            defaultModel = new DefaultTableModel(vdata, vtitle);
-                            table.setModel(defaultModel);
+                            defaultModel.addRow(vRow);
                             if(table.getRowCount()>cacheNum){
                                 defaultModel.setRowCount(0);
-                                table.setModel(defaultModel);
-                                count = 1;
+                                count = 0;
                             }
                             count += 1;
                         }
@@ -186,10 +182,12 @@ public class monitor {
                 }
             }
             process.waitFor();
+            process.destroy();
         }
         catch (IOException | InterruptedException e){
             e.printStackTrace();
         }
+        return process;
     }
 
     public static void main(String[] args){

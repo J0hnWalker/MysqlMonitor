@@ -18,20 +18,14 @@ public class test {
     public static Connection getConn(){
         return conn;
     }
-    public static Thread getT1(){
-        return t1;
-    }
     public static int cacheNum = 50;
-    public static Vector vdata = new Vector();
-    public static Vector vtitle = new Vector();
     public static DefaultTableModel defaultModel = null;
 
     public test() {
         button1.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
-                test.t1 = new Thread() {
+                t1 = new Thread() {
                     public void run() {
                         test.m = new monitor();
                         String username = usernameField.getText();
@@ -41,24 +35,26 @@ public class test {
                         String host = hostField.getText();
                         String dbname = dbField.getText();
                         test.conn = test.m.connectMysql(username, password, dbname, host, port, JP);
-                        test.m.execSql(test.conn, "set global general_log=on;");
-                        String[] logStatus = test.m.execSql(test.conn, "show variables like 'general_log';").trim().split("\t");
-                        System.out.println(logStatus[1]);
-                        //while (logStatus[1].equals("ON")) {
-                        while(!Thread.currentThread().isInterrupted()){
-                            System.out.println("ISINTERRUPTED: "+test.t1.isInterrupted());
-                            try {
-                                test.m.logMonitor(test.m.logSwitch(test.conn, bottomlabel), test.cacheNum, vdata, vtitle, table1, defaultModel);
-                                Thread.sleep(1000);
-                            }
-                            catch (InterruptedException e){
-                                System.out.println("ISINTERRUPTED: "+test.t1.isInterrupted());
-                                Thread.currentThread().interrupt();
+                        if (test.conn != null) {
+                            button1.setEnabled(false);
+                            test.m.execSql(test.conn, "set global general_log=on;");
+                            String[] logStatus = test.m.execSql(test.conn, "show variables like 'general_log';").trim().split("\t");
+                            //System.out.println(logStatus[1]);
+                            //while (logStatus[1].equals("ON")) {
+                            while (!Thread.currentThread().isInterrupted()) {
+                                //System.out.println("threadid t1: "+currentThread().getId());
+                                try {
+                                    m.logMonitor(test.m.logSwitch(test.conn, bottomlabel), test.cacheNum, table1, defaultModel);
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    //System.out.println("ISINTERRUPTED: "+test.t1.isInterrupted());
+                                    Thread.currentThread().interrupt();
+                                }
                             }
                         }
                     }
                 };
-                test.t1.start();
+                t1.start();
             }
         });
         button2.addActionListener(new ActionListener() {
@@ -66,24 +62,40 @@ public class test {
             public void actionPerformed(ActionEvent e) {
                 //JOptionPane.showMessageDialog(null, "Hello Walker.");
                 Connection cn = getConn();
-                Thread t2 = getT1();
                 if (cn != null) {
                     try {
+                        //System.out.println("threadid t1: "+t1.getId());
                         test.m.execSql(test.conn, "set global general_log=off;");
                         cn.close();
-                        t2.interrupt();
-                        JOptionPane.showMessageDialog(null, "关闭连接.");
-                    } catch (SQLException ex) {
+                        //System.out.println("isAlive: " + test.process.isAlive());
+                        t1.interrupt();
+                        defaultModel.setRowCount(0);
+                        String OS = System.getProperty("os.name").toLowerCase();
+                        String[] command = null;
+                        Process process = null;
+                        if (OS.contains("win")) {
+                            command = new String[]{"cmd.exe", "/c", "taskkill /f /im tail.exe"};
+                        }
+                        else{
+                            command = new String[]{"/bin/sh", "-c", "pkill tail"};
+                        }
+                        process = Runtime.getRuntime().exec(command);
+                        //process.destroy();
+                        //JOptionPane.showMessageDialog(null, "连接关闭.");
+                        bottomlabel.setText("连接关闭");
+                    } catch (SQLException | IOException ex) {
                         ex.printStackTrace();
                     }
                 }
+                if (button2 == e.getSource()){
+                    button1.setEnabled(true);
+                }
             }
         });
-        vtitle.add("id");
-        vtitle.add("requestText");
-        vtitle.add("requestType");
-        vtitle.add("time");
-        defaultModel = new DefaultTableModel(vdata, vtitle);
+        String header[] = new String[] { "id", "requestText", "requestType",
+                "time"};
+        defaultModel = new DefaultTableModel(0, 0);
+        defaultModel.setColumnIdentifiers(header);
         table1.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         table1.setModel(defaultModel);
         JScrollPane2.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -109,7 +121,7 @@ public class test {
         } catch (InstantiationException e) {
         } catch (IllegalAccessException e) {
         }
-        JFrame frame = new JFrame("test");
+        JFrame frame = new JFrame("MysqlLogMonitor");
         //frame.setSize(50, 50);
         frame.setContentPane(new test().panelMain);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
