@@ -1,7 +1,10 @@
 package com.wk;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.io.*;
 import java.sql.Connection;
@@ -148,18 +151,35 @@ public class monitor {
             }
             Pattern r = Pattern.compile("Query\\s*(.*)");
             try {
+                MySqlStParser mtp = new MySqlStParser();
                 String line = null;
                 int count = 1;
+                //String sql = "";
+                String resultText = null;
+//                TableColumn tableColumn = table.getColumn("requestText");
+//                DefaultTableCellRenderer backGroundColor = new DefaultTableCellRenderer();
+//                backGroundColor.setBackground(Color.red);
+//                tableColumn.setCellRenderer(backGroundColor);
                 while ((line = read.readLine()) != null) {
                     try{
                         Matcher m = r.matcher(line);
                         if(m.find()){
                             //System.out.println(time.format(d) + " : " + m.group(0));
+                            if(mtp.MySqlParser(m.group(1))){
+                                //sql = "[error] " + m.group(1);
+                                resultText = "Syntax Error";
+                                table.getColumnModel().getColumn(1).setCellRenderer(new StatusColumnCellRenderer());
+                            }
+                            else{
+                                resultText = "OK";
+                            }
                             Vector vRow = new Vector();
                             vRow.add(count);
                             vRow.add(m.group(1));
+                            vRow.add(resultText);
                             vRow.add("Query");
                             vRow.add(time.format(d));
+
                             defaultModel.addRow(vRow);
                             if(table.getRowCount()>cacheNum){
                                 defaultModel.setRowCount(0);

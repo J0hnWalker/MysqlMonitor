@@ -92,12 +92,16 @@ public class test {
                 }
             }
         });
-        String header[] = new String[] { "id", "requestText", "requestType",
-                "time"};
+        String header[] = new String[] { "id", "requestText", "requestType", "return", "time"};
         defaultModel = new DefaultTableModel(0, 0);
         defaultModel.setColumnIdentifiers(header);
         table1.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         table1.setModel(defaultModel);
+        table1.getColumnModel().getColumn(0).setPreferredWidth(20);
+        table1.getColumnModel().getColumn(1).setPreferredWidth(500);
+        table1.getColumnModel().getColumn(2).setPreferredWidth(100);
+        table1.getColumnModel().getColumn(3).setPreferredWidth(100);
+        table1.getColumnModel().getColumn(4).setPreferredWidth(100);
         JScrollPane2.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         JScrollPane2.setViewportView(table1);
         comboBox1.addItem(50);
@@ -114,15 +118,16 @@ public class test {
 
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel(
-                    "com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+            //UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (UnsupportedLookAndFeelException e) {
         } catch (ClassNotFoundException e) {
         } catch (InstantiationException e) {
         } catch (IllegalAccessException e) {
         }
         JFrame frame = new JFrame("MysqlLogMonitor");
-        //frame.setSize(50, 50);
+        frame.setSize(1000, 500); //窗体初始大小
+        frame.setLocationRelativeTo(null); //居中显示
         frame.setContentPane(new test().panelMain);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
