@@ -18,7 +18,7 @@ public class test {
     public static Connection getConn(){
         return conn;
     }
-    public static int cacheNum = 50;
+    public static int cacheNum = 100;
     public static DefaultTableModel defaultModel = null;
 
     public test() {
@@ -92,8 +92,21 @@ public class test {
                 }
             }
         });
-        String header[] = new String[] { "id", "requestText", "requestType", "return", "time"};
-        defaultModel = new DefaultTableModel(0, 0);
+        String header[] = new String[] { "id", "requestText", "return", "requestType", "time"};
+        //defaultModel = new DefaultTableModel(0, 0);
+        defaultModel = new DefaultTableModel(0, 0){
+            public Class getColumnClass(int column){
+                Class returnValue;
+                if (column == 0)
+                {
+                    returnValue = getValueAt(0, column).getClass();
+                }
+                else{
+                    returnValue = String.class;
+                }
+                return returnValue;
+            }
+        };
         defaultModel.setColumnIdentifiers(header);
         table1.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         table1.setModel(defaultModel);
@@ -104,9 +117,9 @@ public class test {
         table1.getColumnModel().getColumn(4).setPreferredWidth(100);
         JScrollPane2.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         JScrollPane2.setViewportView(table1);
-        comboBox1.addItem(50);
         comboBox1.addItem(100);
         comboBox1.addItem(200);
+        comboBox1.addItem(500);
         comboBox1.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

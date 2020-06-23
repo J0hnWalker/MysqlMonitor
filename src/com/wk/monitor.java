@@ -1,10 +1,7 @@
 package com.wk;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
+import javax.swing.table.*;
 import java.awt.*;
 import java.io.*;
 import java.sql.Connection;
@@ -27,7 +24,7 @@ public class monitor {
         SimpleDateFormat time = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]");
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%d/%s", host, port, dbname), user, pass);
+            conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%d/%s?serverTimezone=Asia/Shanghai&characterEncoding=UTF-8", host, port, dbname), user, pass);
             //System.out.println(time.format(d) + ": 数据库连接成功");
             return conn;
 
@@ -75,7 +72,6 @@ public class monitor {
         SimpleDateFormat time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         SimpleDateFormat time1 = new SimpleDateFormat("yyyy-MM-dd");
         String path = execSql(conn, "select @@datadir;").trim().replace("\\", "/") + String.format("%s.txt", time1.format(d));
-        //Connection conn = connectMysql("root", "toor", "sec_sql", "127.0.0.1", 8889);
         String[] logfile = null;
         if(conn != null) {
             //String ver = execSql(conn, "select VERSION();");
@@ -125,8 +121,7 @@ public class monitor {
     public static Process logMonitor(String logfile, int cacheNum, JTable table, DefaultTableModel defaultModel){
         Process process = null;
         String[] command = null;
-        Date d = new Date();
-        SimpleDateFormat time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat time = new SimpleDateFormat("HH:mm:ss:SSSS");
         try {
             String OS = System.getProperty("os.name").toLowerCase();
             if (OS.contains("win")) {
@@ -156,10 +151,7 @@ public class monitor {
                 int count = 1;
                 //String sql = "";
                 String resultText = null;
-//                TableColumn tableColumn = table.getColumn("requestText");
-//                DefaultTableCellRenderer backGroundColor = new DefaultTableCellRenderer();
-//                backGroundColor.setBackground(Color.red);
-//                tableColumn.setCellRenderer(backGroundColor);
+                table.setAutoCreateRowSorter(true);
                 while ((line = read.readLine()) != null) {
                     try{
                         Matcher m = r.matcher(line);
@@ -178,14 +170,21 @@ public class monitor {
                             vRow.add(m.group(1));
                             vRow.add(resultText);
                             vRow.add("Query");
-                            vRow.add(time.format(d));
-
+                            vRow.add(time.format(new Date()));
                             defaultModel.addRow(vRow);
-                            if(table.getRowCount()>cacheNum){
+                            table.setRowSorter(null);
+                            if(defaultModel.getRowCount() > 0){
+                                RowSorter<TableModel> sorter = new TableRowSorter<TableModel>(defaultModel);
+                                table.setRowSorter(sorter);
+                                table.setAutoCreateRowSorter(true);
+                                defaultModel.fireTableDataChanged();
+                            }
+                            if(defaultModel.getRowCount()>cacheNum){
                                 defaultModel.setRowCount(0);
                                 count = 0;
                             }
                             count += 1;
+
                         }
                     } catch (Exception e) {
                         e.printStackTrace();

@@ -4,6 +4,7 @@
     <root id="archive" name="formtest.jar">
       <element id="module-output" name="formtest" />
       <element id="extracted-dir" path="$PROJECT_DIR$/../jars/mysql-connector-java-8.0.15.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../jars/druid-1.1.22.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
