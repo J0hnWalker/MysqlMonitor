@@ -2,8 +2,6 @@ package com.wk;
 
 import javax.swing.*;
 import javax.swing.table.*;
-import java.awt.*;
-import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -14,9 +12,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Vector;
 import java.util.regex.*;
-import java.util.stream.StreamSupport;
+import java.io.File;
+import java.nio.charset.Charset;
+import org.apache.commons.io.input.Tailer;
+import org.apache.commons.io.input.TailerListenerAdapter;
 
-public class monitor {
+public class Monitor {
 
     public static Connection connectMysql(String user, String pass, String dbname, String host, int port, JOptionPane JP){
         Connection conn = null;
@@ -118,118 +119,66 @@ public class monitor {
         return logfile[1];
     }
 
-    public static Process logMonitor(String logfile, int cacheNum, JTable table, DefaultTableModel defaultModel){
-        Process process = null;
-        String[] command = null;
+    public void logMonitor(String logfile, int cacheNum, JTable table, DefaultTableModel defaultModel){
         SimpleDateFormat time = new SimpleDateFormat("HH:mm:ss:SSSS");
-        try {
-            String OS = System.getProperty("os.name").toLowerCase();
-            if (OS.contains("win")) {
-                command = new String[]{"cmd.exe", "/c", "tail.exe -f \"" + logfile + "\""};
-            }
-            else{
-                command = new String[]{"/bin/sh", "-c", "tail -f \"" + logfile + "\""};
-            }
-            process = Runtime.getRuntime().exec(command);
-            final InputStream in = process.getInputStream();
-//            Thread t = new Thread() {
-//                public void run() {
-//
-//                }
-//            };
-//            t.start();
-            BufferedReader read = null;
-            try {
-                read = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-            Pattern r = Pattern.compile("Query\\s*(.*)");
-            try {
-                MySqlStParser mtp = new MySqlStParser();
-                String line = null;
-                int count = 1;
-                //String sql = "";
+
+        Pattern r = Pattern.compile("Query\\s*(.*)");
+        MySqlStParser mtp = new MySqlStParser();
+        table.setAutoCreateRowSorter(true);
+        File file = new File(logfile);
+        Charset charset = Charset.forName("UTF-8");
+        Tailer tailer = new Tailer(file, charset, new TailerListenerAdapter(){
+            int count = 1;
+            @Override
+            public void handle(String line) {
+                //增加的文件的内容
                 String resultText = null;
-                table.setAutoCreateRowSorter(true);
-                while ((line = read.readLine()) != null) {
-                    try{
-                        Matcher m = r.matcher(line);
-                        if(m.find()){
-                            //System.out.println(time.format(d) + " : " + m.group(0));
-                            if(mtp.MySqlParser(m.group(1))){
-                                //sql = "[error] " + m.group(1);
+                //System.out.println(line);
+                Matcher m = r.matcher(line);
+                if(m.find()){
+                    String querycontent = "";
+                    if(!m.group(1).equals("")){
+                        if(m.group(1).equals("shutdown")){
+                            querycontent = "shutdown";
+                            resultText = "Mysql ShutDown";
+                        }
+                        else{
+                            querycontent = m.group(1);
+                            if(mtp.MySqlParser(querycontent)){
                                 resultText = "Syntax Error";
                                 table.getColumnModel().getColumn(1).setCellRenderer(new StatusColumnCellRenderer());
                             }
                             else{
                                 resultText = "OK";
                             }
-                            Vector vRow = new Vector();
-                            vRow.add(count);
-                            vRow.add(m.group(1));
-                            vRow.add(resultText);
-                            vRow.add("Query");
-                            vRow.add(time.format(new Date()));
-                            defaultModel.addRow(vRow);
-                            table.setRowSorter(null);
-                            if(defaultModel.getRowCount() > 0){
-                                RowSorter<TableModel> sorter = new TableRowSorter<TableModel>(defaultModel);
-                                table.setRowSorter(sorter);
-                                table.setAutoCreateRowSorter(true);
-                                defaultModel.fireTableDataChanged();
-                            }
-                            if(defaultModel.getRowCount()>cacheNum){
-                                defaultModel.setRowCount(0);
-                                count = 0;
-                            }
-                            count += 1;
-
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        Vector vRow = new Vector();
+                        vRow.add(count);
+                        vRow.add(querycontent);
+                        vRow.add(resultText);
+                        vRow.add("Query");
+                        vRow.add(time.format(new Date()));
+                        defaultModel.addRow(vRow);
+                        table.setRowSorter(null);
+                        if(defaultModel.getRowCount() > 0){
+                            RowSorter<TableModel> sorter = new TableRowSorter<TableModel>(defaultModel);
+                            table.setRowSorter(sorter);
+                            table.setAutoCreateRowSorter(true);
+                            defaultModel.fireTableDataChanged();
+                        }
+                        if(defaultModel.getRowCount()>cacheNum){
+                            defaultModel.setRowCount(0);
+                            count = 0;
+                        }
+                        count += 1;
                     }
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-            finally{
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            process.waitFor();
-            process.destroy();
-        }
-        catch (IOException | InterruptedException e){
-            e.printStackTrace();
-        }
-        return process;
+        },500,true, false, 8192);
+        tailer.run();
     }
 
     public static void main(String[] args){
-//        Connection conn = null;
-//        String logfile = null;
-//        //conn = connectMysql("root", "toor", "sys", "127.0.0.1", 3306);
-//        //conn = connectMysql("root", "toor", "test", "127.0.0.1", 3306);
-//        //logfile = logSwitch(conn);
-//        try {
-//            //logMonitor(logfile, textArea1);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        try{
-//            execSql(conn, "set global general_log=off;");
-//            if (conn != null) {
-//                conn.close();
-//            }
-//        }
-//        catch (SQLException ex){
-//            ex.printStackTrace();
-//        }
-
 
     }
 }

@@ -8,7 +8,7 @@ import com.alibaba.druid.sql.dialect.mysql.parser.MySqlStatementParser;
 public class MySqlStParser {
 
     public static Boolean MySqlParser(String sql) {
-        Boolean isValid = false;
+        boolean isValid = false;
         try {
             MySqlStatementParser parser = new MySqlStatementParser(sql);
             List<SQLStatement> statementList = parser.parseStatementList();

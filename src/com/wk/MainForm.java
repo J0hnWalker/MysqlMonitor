@@ -3,16 +3,13 @@ package com.wk;
 import javax.swing.*;
 import javax.swing.JScrollPane;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Vector;
 
-public class test {
-    public static monitor m;
+public class MainForm {
+    public static Monitor m;
     public static Connection conn;
     public static Thread t1;
     public static Connection getConn(){
@@ -21,33 +18,29 @@ public class test {
     public static int cacheNum = 100;
     public static DefaultTableModel defaultModel = null;
 
-    public test() {
+    public MainForm() {
         button1.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 t1 = new Thread() {
                     public void run() {
-                        test.m = new monitor();
+                        MainForm.m = new Monitor();
                         String username = usernameField.getText();
                         char[] pw = passwordField.getPassword();
                         String password = new String(pw);
                         int port = Integer.valueOf(portField.getText());
                         String host = hostField.getText();
                         String dbname = dbField.getText();
-                        test.conn = test.m.connectMysql(username, password, dbname, host, port, JP);
-                        if (test.conn != null) {
+                        MainForm.conn = MainForm.m.connectMysql(username, password, dbname, host, port, JP);
+                        if (MainForm.conn != null) {
                             button1.setEnabled(false);
-                            test.m.execSql(test.conn, "set global general_log=on;");
-                            String[] logStatus = test.m.execSql(test.conn, "show variables like 'general_log';").trim().split("\t");
-                            //System.out.println(logStatus[1]);
-                            //while (logStatus[1].equals("ON")) {
+                            MainForm.m.execSql(MainForm.conn, "set global general_log=on;");
+                            String[] logStatus = MainForm.m.execSql(MainForm.conn, "show variables like 'general_log';").trim().split("\t");
                             while (!Thread.currentThread().isInterrupted()) {
-                                //System.out.println("threadid t1: "+currentThread().getId());
                                 try {
-                                    m.logMonitor(test.m.logSwitch(test.conn, bottomlabel), test.cacheNum, table1, defaultModel);
+                                    m.logMonitor(MainForm.m.logSwitch(MainForm.conn, bottomlabel), MainForm.cacheNum, table1, defaultModel);
                                     Thread.sleep(1000);
                                 } catch (InterruptedException e) {
-                                    //System.out.println("ISINTERRUPTED: "+test.t1.isInterrupted());
                                     Thread.currentThread().interrupt();
                                 }
                             }
@@ -60,30 +53,15 @@ public class test {
         button2.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //JOptionPane.showMessageDialog(null, "Hello Walker.");
                 Connection cn = getConn();
                 if (cn != null) {
                     try {
-                        //System.out.println("threadid t1: "+t1.getId());
-                        test.m.execSql(test.conn, "set global general_log=off;");
+                        MainForm.m.execSql(MainForm.conn, "set global general_log=off;");
                         cn.close();
-                        //System.out.println("isAlive: " + test.process.isAlive());
                         t1.interrupt();
                         defaultModel.setRowCount(0);
-                        String OS = System.getProperty("os.name").toLowerCase();
-                        String[] command = null;
-                        Process process = null;
-                        if (OS.contains("win")) {
-                            command = new String[]{"cmd.exe", "/c", "taskkill /f /im tail.exe"};
-                        }
-                        else{
-                            command = new String[]{"/bin/sh", "-c", "pkill tail"};
-                        }
-                        process = Runtime.getRuntime().exec(command);
-                        //process.destroy();
-                        //JOptionPane.showMessageDialog(null, "连接关闭.");
                         bottomlabel.setText("连接关闭");
-                    } catch (SQLException | IOException ex) {
+                    } catch (SQLException ex) {
                         ex.printStackTrace();
                     }
                 }
@@ -93,13 +71,14 @@ public class test {
             }
         });
         String header[] = new String[] { "id", "requestText", "return", "requestType", "time"};
-        //defaultModel = new DefaultTableModel(0, 0);
         defaultModel = new DefaultTableModel(0, 0){
-            public Class getColumnClass(int column){
+            @Override
+            public Class<?> getColumnClass(int column){
                 Class returnValue;
                 if (column == 0)
                 {
-                    returnValue = getValueAt(0, column).getClass();
+                    //returnValue = getValueAt(0, column).getClass();
+                    returnValue = Integer.class;
                 }
                 else{
                     returnValue = String.class;
@@ -124,7 +103,7 @@ public class test {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //System.out.println(comboBox1.getSelectedItem());
-                test.cacheNum = (Integer) comboBox1.getSelectedItem();
+                MainForm.cacheNum = (Integer) comboBox1.getSelectedItem();
             }
         });
     }
@@ -141,7 +120,7 @@ public class test {
         JFrame frame = new JFrame("MysqlLogMonitor");
         frame.setSize(1000, 500); //窗体初始大小
         frame.setLocationRelativeTo(null); //居中显示
-        frame.setContentPane(new test().panelMain);
+        frame.setContentPane(new MainForm().panelMain);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
